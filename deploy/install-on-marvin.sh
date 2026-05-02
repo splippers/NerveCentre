@@ -36,3 +36,5 @@ else
   git clone "$REPO_URL" "$DEST"
   echo "Cloned $REPO_URL → $DEST"
 fi
+
+echo "To enable the unified Splippers portal on port 80 (nginx): sudo bash \"$DEST/deploy/marvin-portal/install-portal.sh\""
