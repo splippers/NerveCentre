@@ -32,7 +32,7 @@ If `NERVECENTRE_ROOT` already exists with a `.git` folder, the script runs `git 
 
 ## All-in-one install (single host)
 
-From **`Projects/NerveCentre`**, with sibling clones **`../Brickwise`**, **`../Splippers-Archive`**, and **`../massdeb8`**:
+From **`Projects/NerveCentre`**, with sibling clones **`../Brickwise`**, **`../Splippers-Archive`**, **`../massdeb8`**, and optionally **`../Monyatron`**:
 
 ```bash
 cd Projects/NerveCentre   # or your path to this repo
@@ -44,7 +44,8 @@ This script:
 1. Installs or upgrades **Brickwise** into **`/opt/brickwise-venv`**, installs **`brickwise-dashboard.service`**, and enables **`brickwise-dashboard`** (root; Gluster CLI).
 2. Creates **`splippers-api/.venv`**, builds **`splippers-ui`**, runs **`scripts/install-splippers-service.sh`**, and enables **`splippers-archive`** (runs as `SUDO_USER` when you used `sudo`).
 3. Creates **`massdeb8/.venv`**, builds **`ui/`**, writes **`sic-arena.service`**, and enables **`sic-arena`** (same non-root user when applicable).
-4. Runs **`deploy/portal/install-portal.sh`** for nginx on port **80** unless **`SKIP_PORTAL=1`**.
+4. If **`../Monyatron`** exists (with **`requirements-web.txt`** and **`web/backend/app.py`**), creates **`Monyatron/.venv`**, writes **`monyatron.service`** (Flask + Ollama station desk on **`MONYATRON_PORT`**, default **5050**), and enables **`monyatron`**.
+5. Runs **`deploy/portal/install-portal.sh`** for nginx on port **80** unless **`SKIP_PORTAL=1`**.
 
 Prerequisites: **`python3`**, **`python3-venv`**, **`npm`** (Node.js), and **`nginx`** if you want the portal step (otherwise install nginx later and run `deploy/portal/install-portal.sh` yourself).
 
@@ -56,11 +57,11 @@ Useful options:
 | **`REBUILD_UI=1`** | Force `npm install && npm run build` for both UIs |
 | **`SKIP_PORTAL=1`** | Skip nginx portal install |
 | **`RUN_USER=name`** | User for Splippers + SIC venvs and UI builds (default: invoking user behind `sudo`) |
-| **`SPLIPPERS_PORT`**, **`MASSDEB8_PORT`** | Listener ports (defaults **8000**, **8787**); use **`sudo -E`** so variables survive `sudo` |
+| **`SPLIPPERS_PORT`**, **`MASSDEB8_PORT`**, **`MONYATRON_PORT`** | Listener ports (defaults **8000**, **8787**, **5050**); use **`sudo -E`** so variables survive `sudo` |
 
 ## Unified Splippers portal (port 80)
 
-**`http://<host>/` and `http://<host>:80/`** serve the NerveCentre **`index.html`** (unified landing page). Brickwise, Archive, and SIC use the paths and redirects defined in `deploy/portal/install-portal.sh`.
+**`http://<host>/` and `http://<host>:80/`** serve the NerveCentre **`index.html`** (unified landing page). **Brickwise**, **Monyatron**, **Archive**, and **SIC** use the paths and redirects/proxies defined in `deploy/portal/install-portal.sh`. Monyatron is proxied at **`/monyatron/`** to **`127.0.0.1:5050`** by default (same pattern as Brickwise under **`/brickwise/`**).
 
 1. Install nginx (`sudo apt install nginx` on Debian/Ubuntu).
 2. Ensure Splippers backends are running where you intend (Brickwise on Gluster nodes, Archive/SIC as you deploy them).
@@ -82,6 +83,17 @@ sudo BRICKWISE_BACKENDS="10.0.0.1:8756 10.0.0.2:8756" \
 Use your LAN IPs or DNS names. Optional **`BRICKWISE_LB_METHOD`**: `least_conn` (default), `round_robin`, or `ip_hash` (sticky by client IP).
 
 If **`BRICKWISE_BACKENDS`** is unset, nginx uses **`127.0.0.1:$BW_PORT`** (default **`BW_PORT=8756`**) — colocated Brickwise only.
+
+### Load-balanced Monyatron (optional)
+
+Same idea as Brickwise — multiple Flask backends:
+
+```bash
+sudo MONYATRON_BACKENDS="10.0.0.1:5050 10.0.0.2:5050" \
+  bash deploy/portal/install-portal.sh
+```
+
+If **`MONYATRON_BACKENDS`** is unset, nginx proxies **`/monyatron/`** to **`127.0.0.1:$MONYATRON_PORT`** (default **`MONYATRON_PORT=5050`**).
 
 ### Redirects for Archive / SIC on a specific node
 

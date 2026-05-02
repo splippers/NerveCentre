@@ -17,6 +17,7 @@
       --brickwise: #38bdf8;
       --archive: #fbbf24;
       --sic: #c084fc;
+      --monyatron: #2dd4bf;
       --card-radius: 18px;
     }
     * { box-sizing: border-box; }
@@ -108,6 +109,11 @@
       background: rgba(192, 132, 252, 0.11);
       border: 1px solid rgba(192, 132, 252, 0.28);
     }
+    .card--monyatron .badge {
+      color: var(--monyatron);
+      background: rgba(45, 212, 191, 0.1);
+      border: 1px solid rgba(45, 212, 191, 0.28);
+    }
     a.card h2 {
       margin: 0 0 0.45rem;
       font-size: 1.35rem;
@@ -129,6 +135,7 @@
     a.card--brickwise .cta { color: var(--brickwise); }
     a.card--archive .cta { color: var(--archive); }
     a.card--sic .cta { color: var(--sic); }
+    a.card--monyatron .cta { color: var(--monyatron); }
     footer {
       margin-top: 2.75rem;
       text-align: center;
@@ -161,6 +168,12 @@
         <h2>SIC — Symposium of Infinite Contention</h2>
         <p class="blurb">LAN debating arena: philosopher personas, live chair control, optional Ent Mode.</p>
         <span class="cta">Open SIC →</span>
+      </a>
+      <a class="card card--monyatron" href="/monyatron/">
+        <span class="badge">Writing</span>
+        <h2>Monyatron</h2>
+        <p class="blurb">Splippers station desk — Monya manuscript tooling and Ollama-backed chat.</p>
+        <span class="cta">Open Monyatron →</span>
       </a>
     </nav>
     <footer>Port 80 · NerveCentre · Splippers backends must be reachable from nginx (local or upstream).</footer>
