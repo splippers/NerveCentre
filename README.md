@@ -60,6 +60,8 @@ Useful options:
 
 ## Unified Splippers portal (port 80)
 
+**`http://<host>/` and `http://<host>:80/`** serve the NerveCentre **`index.html`** (unified landing page). Brickwise, Archive, and SIC use the paths and redirects defined in `deploy/portal/install-portal.sh`.
+
 1. Install nginx (`sudo apt install nginx` on Debian/Ubuntu).
 2. Ensure Splippers backends are running where you intend (Brickwise on Gluster nodes, Archive/SIC as you deploy them).
 3. From this repo:

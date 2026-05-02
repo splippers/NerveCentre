@@ -96,12 +96,9 @@ server {
     listen [::]:80 default_server;
     server_name _;
 
+    # Unified NerveCentre landing page is the default for http://host/ and http://host:80/
     root "${WWW}";
     index index.html;
-
-    location = / {
-        try_files /index.html =404;
-    }
 
     location = /brickwise {
         return 301 http://\$host/brickwise/;
@@ -135,6 +132,11 @@ server {
     }
     location /sic/ {
         ${SIC_LINE}
+    }
+
+    # Everything else under this host:80 — serve static files; / → index.html (NerveCentre UI)
+    location / {
+        try_files \$uri \$uri/ /index.html;
     }
 }
 NGINX
