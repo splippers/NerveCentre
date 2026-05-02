@@ -32,7 +32,7 @@ If `NERVECENTRE_ROOT` already exists with a `.git` folder, the script runs `git 
 
 ## All-in-one install (single host)
 
-From **`Projects/NerveCentre`**, with sibling clones **`../Brickwise`**, **`../Splippers-Archive`**, **`../massdeb8`**, and optionally **`../Monyatron`**:
+From **`Projects/NerveCentre`**, with sibling clones **`../Brickwise`**, **`../Splippers-Archive`**, **`../massdeb8`**, and optionally **`../Monyatron`** and **`../jonotron`**:
 
 ```bash
 cd Projects/NerveCentre   # or your path to this repo
@@ -45,7 +45,8 @@ This script:
 2. Creates **`splippers-api/.venv`**, builds **`splippers-ui`**, runs **`scripts/install-splippers-service.sh`**, and enables **`splippers-archive`** (runs as `SUDO_USER` when you used `sudo`).
 3. Creates **`massdeb8/.venv`**, builds **`ui/`**, writes **`sic-arena.service`**, and enables **`sic-arena`** (same non-root user when applicable).
 4. If **`../Monyatron`** exists (with **`requirements-web.txt`** and **`web/backend/app.py`**), creates **`Monyatron/.venv`**, writes **`monyatron.service`** (Flask + Ollama station desk on **`MONYATRON_PORT`**, default **5050**), and enables **`monyatron`**.
-5. Runs **`deploy/portal/install-portal.sh`** for nginx on port **80** unless **`SKIP_PORTAL=1`**.
+5. If **`../jonotron`** exists, runs **`scripts/install.sh`**, sets **`JONOTRON_PORT`** in **`.env`** (default **8011**, distinct from Splippers Archive on **8000**), runs **`scripts/install-service.sh`**, and enables **`jonotron`** (upstream **`jonotron.service`** template).
+6. Runs **`deploy/portal/install-portal.sh`** for nginx on port **80** unless **`SKIP_PORTAL=1`**.
 
 Prerequisites: **`python3`**, **`python3-venv`**, **`npm`** (Node.js), and **`nginx`** if you want the portal step (otherwise install nginx later and run `deploy/portal/install-portal.sh` yourself).
 
@@ -57,19 +58,21 @@ Useful options:
 | **`REBUILD_UI=1`** | Force `npm install && npm run build` for both UIs |
 | **`SKIP_PORTAL=1`** | Skip nginx portal install |
 | **`RUN_USER=name`** | User for Splippers + SIC venvs and UI builds (default: invoking user behind `sudo`) |
-| **`SPLIPPERS_PORT`**, **`MASSDEB8_PORT`**, **`MONYATRON_PORT`** | Listener ports (defaults **8000**, **8787**, **5050**); use **`sudo -E`** so variables survive `sudo` |
+| **`SPLIPPERS_PORT`**, **`MASSDEB8_PORT`**, **`MONYATRON_PORT`**, **`JONOTRON_PORT`** | Listener ports (defaults **8000**, **8787**, **5050**, **8011**); use **`sudo -E`** so variables survive `sudo` |
 
 ## Unified Splippers portal (port 80)
 
-**`http://<host>/` and `http://<host>:80/`** serve the NerveCentre **`index.html`** (unified landing page). **Brickwise**, **Monyatron**, **Archive**, and **SIC** use the paths and redirects/proxies defined in `deploy/portal/install-portal.sh`. Monyatron is proxied at **`/monyatron/`** to **`127.0.0.1:5050`** by default (same pattern as Brickwise under **`/brickwise/`**).
+**`http://<host>/` and `http://<host>:80/`** serve the NerveCentre **`index.html`** (unified landing page). **Brickwise**, **Monyatron**, **Jonotron**, **Archive**, and **SIC** use the paths and redirects/proxies in `deploy/portal/install-portal.sh`. Proxied apps use the **`/brickwise/`**, **`/monyatron/`**, **`/jonotron/`** URL prefixes on port **80**.
 
 1. Install nginx (`sudo apt install nginx` on Debian/Ubuntu).
-2. Ensure Splippers backends are running where you intend (Brickwise on Gluster nodes, Archive/SIC as you deploy them).
+2. Ensure Splippers backends are running where you intend (Brickwise on Gluster nodes, Archive/SIC, Monyatron, Jonotron as you deploy them).
 3. From this repo:
 
    ```bash
    sudo bash deploy/portal/install-portal.sh
    ```
+
+Do **not** set **`JONOTRON_HTTP_PREFIX`** in **`jonotron/.env`** when using this portal — nginx strips **`/jonotron/`** toward the backend and rewrites **`/api`** and **`/ui`** in HTML/JS responses.
 
 ### Load-balanced Brickwise (Eddie + Marvin)
 
@@ -94,6 +97,15 @@ sudo MONYATRON_BACKENDS="10.0.0.1:5050 10.0.0.2:5050" \
 ```
 
 If **`MONYATRON_BACKENDS`** is unset, nginx proxies **`/monyatron/`** to **`127.0.0.1:$MONYATRON_PORT`** (default **`MONYATRON_PORT=5050`**).
+
+### Load-balanced Jonotron (optional)
+
+```bash
+sudo JONOTRON_BACKENDS="10.0.0.1:8011 10.0.0.2:8011" \
+  bash deploy/portal/install-portal.sh
+```
+
+If **`JONOTRON_BACKENDS`** is unset, nginx proxies **`/jonotron/`** to **`127.0.0.1:$JONOTRON_PORT`** (default **`JONOTRON_PORT=8011`** so Splippers Archive can keep **8000** on the same host).
 
 ### Redirects for Archive / SIC on a specific node
 

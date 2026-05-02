@@ -2,7 +2,7 @@
 # Install the Splippers unified web portal from NerveCentre (nginx, port 80).
 # Host-agnostic: Brickwise can load-balance across multiple backends (e.g. Eddie + Marvin).
 #
-# Brickwise / Splippers Archive / SIC / Monyatron defaults: 8756 / 8000 / 8787 / 5050.
+# Brickwise / Archive / SIC / Monyatron / Jonotron defaults: 8756 / 8000 / 8787 / 5050 / 8011.
 #
 # Usage (from repo checkout):
 #   sudo ./deploy/portal/install-portal.sh
@@ -15,6 +15,9 @@
 #
 # Monyatron (Flask on Marvin or elsewhere):
 #   sudo MONYATRON_BACKENDS="10.0.0.1:5050 10.0.0.2:5050" ./deploy/portal/install-portal.sh
+#
+# Jonotron (FastAPI harness — default backend 8011 so Splippers Archive can keep 8000):
+#   sudo JONOTRON_BACKENDS="10.0.0.1:8011 10.0.0.2:8011" ./deploy/portal/install-portal.sh
 
 set -euo pipefail
 
@@ -30,6 +33,9 @@ BRICKWISE_LB_METHOD="${BRICKWISE_LB_METHOD:-least_conn}"
 # Space-separated host:port; unset → 127.0.0.1:$MONYATRON_PORT (Marvin local Monyatron)
 MONYATRON_BACKENDS="${MONYATRON_BACKENDS:-}"
 MONYATRON_LB_METHOD="${MONYATRON_LB_METHOD:-least_conn}"
+JONOTRON_PORT="${JONOTRON_PORT:-8011}"
+JONOTRON_BACKENDS="${JONOTRON_BACKENDS:-}"
+JONOTRON_LB_METHOD="${JONOTRON_LB_METHOD:-least_conn}"
 WWW="${WWW:-/var/www/splippers-portal}"
 SITE_NAME="${SITE_NAME:-splippers-portal}"
 
@@ -103,6 +109,36 @@ monyatron_upstream_block() {
   echo "}"
 }
 
+jonotron_upstream_block() {
+  local lb="" backends=""
+  if [[ -z "${JONOTRON_BACKENDS// }" ]]; then
+    backends="127.0.0.1:${JONOTRON_PORT}"
+  else
+    backends="${JONOTRON_BACKENDS}"
+  fi
+
+  case "${JONOTRON_LB_METHOD}" in
+    least_conn) lb="least_conn;" ;;
+    ip_hash)    lb="ip_hash;" ;;
+    round_robin|"")
+      lb=""
+      ;;
+    *)
+      echo "Unknown JONOTRON_LB_METHOD=${JONOTRON_LB_METHOD} (use least_conn, ip_hash, or round_robin)." >&2
+      exit 1
+      ;;
+  esac
+
+  echo "upstream nerve_jonotron {"
+  if [[ -n "${lb}" ]]; then
+    echo "    ${lb}"
+  fi
+  for be in ${backends}; do
+    echo "    server ${be};"
+  done
+  echo "}"
+}
+
 archive_redirect_stmt() {
   if [[ -n "${ARCHIVE_REDIRECT_HOST:-}" ]]; then
     echo "return 302 http://${ARCHIVE_REDIRECT_HOST}:${ARCHIVE_PORT}/;"
@@ -128,6 +164,7 @@ TMP="$(mktemp)"
 {
   brickwise_upstream_block
   monyatron_upstream_block
+  jonotron_upstream_block
   cat <<NGINX
 server {
     listen 80 default_server;
@@ -176,6 +213,28 @@ server {
         sub_filter_once off;
         sub_filter '"/api/' '"/monyatron/api/';
         sub_filter "'/api/" "'/monyatron/api/";
+    }
+
+    location = /jonotron {
+        return 301 http://\$host/jonotron/;
+    }
+
+    # Jonotron (FastAPI): strip /jonotron/ prefix; rewrite /api and /ui in HTML + JS for the browser.
+    location /jonotron/ {
+        proxy_pass http://nerve_jonotron/;
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_read_timeout 600s;
+        proxy_set_header Accept-Encoding "";
+
+        sub_filter_types text/html application/javascript;
+        sub_filter_once off;
+        sub_filter '"/api/' '"/jonotron/api/';
+        sub_filter "'/api/" "'/jonotron/api/";
+        sub_filter '"/ui/' '"/jonotron/ui/';
+        sub_filter "'/ui/" "'/jonotron/ui/";
     }
 
     location = /archive {
@@ -228,5 +287,10 @@ if [[ -z "${MONYATRON_BACKENDS// }" ]]; then
   echo "  Monyatron upstream: 127.0.0.1:${MONYATRON_PORT} (set MONYATRON_BACKENDS to load-balance)"
 else
   echo "  Monyatron upstream (load-balanced): ${MONYATRON_BACKENDS}"
+fi
+if [[ -z "${JONOTRON_BACKENDS// }" ]]; then
+  echo "  Jonotron upstream: 127.0.0.1:${JONOTRON_PORT} (set JONOTRON_BACKENDS to load-balance; default 8011 avoids clash with Archive on 8000)"
+else
+  echo "  Jonotron upstream (load-balanced): ${JONOTRON_BACKENDS}"
 fi
 echo "Open http://$(hostname -I 2>/dev/null | awk '{print $1}')/ or your load-balanced VIP."
