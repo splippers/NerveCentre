@@ -30,6 +30,34 @@ NERVECENTRE_ROOT=/mnt/SANDIEGO/Projects/NerveCentre bash deploy/install-repo.sh
 
 If `NERVECENTRE_ROOT` already exists with a `.git` folder, the script runs `git pull --ff-only` instead of cloning.
 
+## All-in-one install (single host)
+
+From **`Projects/NerveCentre`**, with sibling clones **`../Brickwise`**, **`../Splippers-Archive`**, and **`../massdeb8`**:
+
+```bash
+cd Projects/NerveCentre   # or your path to this repo
+sudo ./deploy/install-all-splippers.sh
+```
+
+This script:
+
+1. Installs or upgrades **Brickwise** into **`/opt/brickwise-venv`**, installs **`brickwise-dashboard.service`**, and enables **`brickwise-dashboard`** (root; Gluster CLI).
+2. Creates **`splippers-api/.venv`**, builds **`splippers-ui`**, runs **`scripts/install-splippers-service.sh`**, and enables **`splippers-archive`** (runs as `SUDO_USER` when you used `sudo`).
+3. Creates **`massdeb8/.venv`**, builds **`ui/`**, writes **`sic-arena.service`**, and enables **`sic-arena`** (same non-root user when applicable).
+4. Runs **`deploy/portal/install-portal.sh`** for nginx on port **80** unless **`SKIP_PORTAL=1`**.
+
+Prerequisites: **`python3`**, **`python3-venv`**, **`npm`** (Node.js), and **`nginx`** if you want the portal step (otherwise install nginx later and run `deploy/portal/install-portal.sh` yourself).
+
+Useful options:
+
+| Env / flag | Meaning |
+|------------|---------|
+| **`./deploy/install-all-splippers.sh --dry-run`** | Print resolved paths only |
+| **`REBUILD_UI=1`** | Force `npm install && npm run build` for both UIs |
+| **`SKIP_PORTAL=1`** | Skip nginx portal install |
+| **`RUN_USER=name`** | User for Splippers + SIC venvs and UI builds (default: invoking user behind `sudo`) |
+| **`SPLIPPERS_PORT`**, **`MASSDEB8_PORT`** | Listener ports (defaults **8000**, **8787**); use **`sudo -E`** so variables survive `sudo` |
+
 ## Unified Splippers portal (port 80)
 
 1. Install nginx (`sudo apt install nginx` on Debian/Ubuntu).
@@ -73,5 +101,6 @@ Static assets install under **`/var/www/splippers-portal/`**; the nginx site def
 | `deploy/portal/index.html` | Landing page UI |
 | `deploy/portal/install-portal.sh` | Writes nginx site (upstream + server block) and reloads nginx |
 | `deploy/install-repo.sh` | Clone / pull this repository |
+| `deploy/install-all-splippers.sh` | Brickwise + Splippers Archive + SIC venvs, UI builds, systemd, optional nginx portal |
 
 The former **`deploy/marvin-portal/`** path is retired; use **`deploy/portal/`** only.
