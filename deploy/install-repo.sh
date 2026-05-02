@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
-# Clone or update NerveCentre at the Marvin canonical path: /mnt/SANDIEGO/Projects/NerveCentre
-# Run on Marvin after /mnt/SANDIEGO is available (mount + permissions).
+# Clone or update this repository at $NERVECENTRE_ROOT (host-agnostic).
+#
+# Examples:
+#   NERVECENTRE_ROOT=/mnt/EDDIE-SANDIEGO/Projects/NerveCentre bash deploy/install-repo.sh
+#   NERVECENTRE_ROOT=/mnt/SANDIEGO/Projects/NerveCentre bash deploy/install-repo.sh
+#   NERVECENTRE_ROOT=/srv/splippers/NerveCentre bash deploy/install-repo.sh
 
 set -euo pipefail
 
 REPO_URL="${NERVECENTRE_REPO_URL:-https://github.com/splippers/NerveCentre.git}"
-DEST="${NERVECENTRE_ROOT:-/mnt/SANDIEGO/Projects/NerveCentre}"
+DEST="${NERVECENTRE_ROOT:-${HOME}/Projects/NerveCentre}"
 PARENT="$(dirname "$DEST")"
 
 die() {
@@ -23,7 +27,7 @@ if [[ ! -d "$PARENT" ]]; then
     sudo mkdir -p "$PARENT" || die "Could not create $PARENT."
     sudo chown "$(id -un):$(id -gn)" "$PARENT" 2>/dev/null || true
   else
-    die "Cannot create $PARENT — create /mnt/SANDIEGO (mount or sudo mkdir), then retry."
+    die "Cannot create $PARENT — set NERVECENTRE_ROOT to a writable path or create the parent directory."
   fi
 fi
 
@@ -37,4 +41,4 @@ else
   echo "Cloned $REPO_URL → $DEST"
 fi
 
-echo "To enable the unified Splippers portal on port 80 (nginx): sudo bash \"$DEST/deploy/marvin-portal/install-portal.sh\""
+echo "To enable the Splippers portal on port 80 (nginx): sudo bash \"$DEST/deploy/portal/install-portal.sh\""
