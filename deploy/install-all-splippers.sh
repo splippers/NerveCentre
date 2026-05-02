@@ -9,6 +9,7 @@
 #   Projects/massdeb8/
 #   Projects/Monyatron/              (optional — Flask + Ollama station desk)
 #   Projects/jonotron/               (optional — FastAPI harness + static UI)
+#   Projects/Deanotron/               (optional — Expo web via systemd deanotron-web)
 #
 # Requires: sudo root, python3, python3-venv, pip; Node.js + npm for UI builds; nginx for the portal step.
 #
@@ -26,6 +27,7 @@
 #   SPLIPPERS_PORT=8000   Passed through to Splippers systemd install
 #   MONYATRON_PORT=5050   Port for monyatron.service (when ../Monyatron exists)
 #   JONOTRON_PORT=8011    Port for jonotron.service (.env + nginx; avoids Splippers Archive on 8000)
+#   DEANOTRON_PORT=8791   Port for deanotron-web (install-deanotron.sh default; nginx redirect)
 
 set -euo pipefail
 
@@ -57,6 +59,7 @@ SPLIPPERS="${PROJECTS}/Splippers-Archive"
 MASSDEB8="${PROJECTS}/massdeb8"
 MONYATRON="${PROJECTS}/Monyatron"
 JONOTRON="${PROJECTS}/jonotron"
+DEANOTRON="${PROJECTS}/Deanotron"
 
 RUN_USER="${RUN_USER:-${SUDO_USER:-}}"
 if [[ -z "${RUN_USER}" ]] || [[ "${RUN_USER}" == root ]]; then
@@ -70,6 +73,7 @@ export SPLIPPERS_PORT="${SPLIPPERS_PORT:-8000}"
 export MASSDEB8_PORT="${MASSDEB8_PORT:-8787}"
 export MONYATRON_PORT="${MONYATRON_PORT:-5050}"
 export JONOTRON_PORT="${JONOTRON_PORT:-8011}"
+export DEANOTRON_PORT="${DEANOTRON_PORT:-8791}"
 
 echo "==> NerveCentre all-in-one Splippers installer"
 echo "    NerveCentre: ${NERVECENTRE}"
@@ -79,6 +83,7 @@ echo "    Archive:     ${SPLIPPERS}"
 echo "    SIC/massdeb8:${MASSDEB8}"
 echo "    Monyatron:   ${MONYATRON} (optional)"
 echo "    Jonotron:    ${JONOTRON} (optional)"
+echo "    Deanotron:   ${DEANOTRON} (optional)"
 echo "    RUN_USER (venv/UI): ${RUN_USER}"
 echo
 
@@ -100,7 +105,7 @@ command -v python3 >/dev/null || die "python3 not found"
 command -v npm >/dev/null || die "npm not found (install Node.js for UI builds)"
 
 # --- Brickwise: /opt venv + systemd -------------------------------------------------
-echo "==> [1/7] Brickwise — venv at /opt/brickwise-venv"
+echo "==> [1/8] Brickwise — venv at /opt/brickwise-venv"
 if [[ -x /opt/brickwise-venv/bin/brickwise ]]; then
   echo "    upgrading editable install from ${BRICKWISE}"
   /opt/brickwise-venv/bin/pip install -U pip wheel
@@ -113,7 +118,7 @@ install -m 0644 "${BRICKWISE}/deploy/brickwise-dashboard.service" /etc/systemd/s
 echo "    installed /etc/systemd/system/brickwise-dashboard.service"
 
 # --- Splippers Archive: venv, UI build, systemd ------------------------------------
-echo "==> [2/7] Splippers Archive — venv, UI, systemd unit"
+echo "==> [2/8] Splippers Archive — venv, UI, systemd unit"
 API_DIR="${SPLIPPERS}/splippers-api"
 UI_DIR="${SPLIPPERS}/splippers-ui"
 
@@ -144,7 +149,7 @@ fi
 SPLIPPERS_USER="${RUN_USER}" bash "${SPLIPPERS}/scripts/install-splippers-service.sh"
 
 # --- massdeb8 / SIC: venv, UI build, systemd ----------------------------------------
-echo "==> [3/7] SIC (massdeb8) — venv, UI, systemd unit"
+echo "==> [3/8] SIC (massdeb8) — venv, UI, systemd unit"
 if [[ ! -x "${MASSDEB8}/.venv/bin/uvicorn" ]]; then
   echo "    creating venv at massdeb8/.venv"
   run_as_user "set -euo pipefail; cd \"${MASSDEB8}\"; python3 -m venv .venv; .venv/bin/pip install -U pip wheel; .venv/bin/pip install -r requirements.txt"
@@ -186,7 +191,7 @@ echo "    wrote ${SIC_UNIT}"
 
 # --- Monyatron (optional): venv + systemd -------------------------------------------
 MONYATRON_ENABLED=0
-echo "==> [4/7] Monyatron — venv + systemd (optional)"
+echo "==> [4/8] Monyatron — venv + systemd (optional)"
 if [[ -d "${MONYATRON}" ]] && [[ -f "${MONYATRON}/web/backend/app.py" ]] && [[ -f "${MONYATRON}/requirements-web.txt" ]]; then
   MONYATRON_ENABLED=1
   if [[ ! -x "${MONYATRON}/.venv/bin/python" ]]; then
@@ -229,7 +234,7 @@ fi
 
 # --- Jonotron (optional): upstream install.sh + systemd -----------------------------
 JONOTRON_ENABLED=0
-echo "==> [5/7] Jonotron — install.sh + install-service.sh (optional)"
+echo "==> [5/8] Jonotron — install.sh + install-service.sh (optional)"
 if [[ -d "${JONOTRON}" ]] && [[ -f "${JONOTRON}/scripts/install.sh" ]] && [[ -f "${JONOTRON}/requirements.txt" ]]; then
   JONOTRON_ENABLED=1
   run_as_user "set -euo pipefail; cd \"${JONOTRON}\"; bash ./scripts/install.sh"
@@ -247,8 +252,18 @@ else
   echo "    skip — no jonotron clone at ${JONOTRON}"
 fi
 
+# --- Deanotron (optional): Expo web systemd ----------------------------------------
+DEANOTRON_ENABLED=0
+echo "==> [6/8] Deanotron — deploy/install-deanotron.sh (optional)"
+if [[ -d "${DEANOTRON}" ]] && [[ -f "${DEANOTRON}/deploy/install-deanotron.sh" ]]; then
+  DEANOTRON_ENABLED=1
+  DEANOTRON_SRC="${DEANOTRON}" DEANOTRON_USER="${RUN_USER}" DEANOTRON_PORT="${DEANOTRON_PORT}" bash "${DEANOTRON}/deploy/install-deanotron.sh"
+else
+  echo "    skip — no Deanotron clone at ${DEANOTRON}"
+fi
+
 # --- Enable services ---------------------------------------------------------------
-echo "==> [6/7] systemd daemon-reload + enable --now"
+echo "==> [7/8] systemd daemon-reload + enable --now"
 systemctl daemon-reload
 systemctl enable --now brickwise-dashboard splippers-archive sic-arena
 echo "    brickwise-dashboard splippers-archive sic-arena"
@@ -259,9 +274,9 @@ fi
 
 # --- NerveCentre portal (nginx) ----------------------------------------------------
 if [[ "${SKIP_PORTAL}" == "1" ]]; then
-  echo "==> [7/7] SKIP_PORTAL=1 — not running deploy/portal/install-portal.sh"
+  echo "==> [8/8] SKIP_PORTAL=1 — not running deploy/portal/install-portal.sh"
 else
-  echo "==> [7/7] NerveCentre portal (nginx port 80)"
+  echo "==> [8/8] NerveCentre portal (nginx port 80)"
   if ! command -v nginx >/dev/null 2>&1; then
     echo "    nginx not installed — skipping portal (install nginx and run: sudo bash ${NERVECENTRE}/deploy/portal/install-portal.sh)"
   else
@@ -279,6 +294,9 @@ if [[ "${MONYATRON_ENABLED}" == "1" ]]; then
 fi
 if [[ "${JONOTRON_ENABLED}" == "1" ]]; then
   echo "  Jonotron            http://127.0.0.1:${JONOTRON_PORT}/   (also /jonotron/ via portal)"
+fi
+if [[ "${DEANOTRON_ENABLED}" == "1" ]]; then
+  echo "  Deanotron           http://127.0.0.1:${DEANOTRON_PORT}/   (portal links /deanotron/ → redirect)"
 fi
 if [[ "${SKIP_PORTAL}" != "1" ]] && command -v nginx >/dev/null 2>&1; then
   echo "  NerveCentre portal  http://127.0.0.1/"

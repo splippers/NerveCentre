@@ -32,7 +32,7 @@ If `NERVECENTRE_ROOT` already exists with a `.git` folder, the script runs `git 
 
 ## All-in-one install (single host)
 
-From **`Projects/NerveCentre`**, with sibling clones **`../Brickwise`**, **`../Splippers-Archive`**, **`../massdeb8`**, and optionally **`../Monyatron`** and **`../jonotron`**:
+From **`Projects/NerveCentre`**, with sibling clones **`../Brickwise`**, **`../Splippers-Archive`**, **`../massdeb8`**, and optionally **`../Monyatron`**, **`../jonotron`**, and **`../Deanotron`**:
 
 ```bash
 cd Projects/NerveCentre   # or your path to this repo
@@ -46,7 +46,8 @@ This script:
 3. Creates **`massdeb8/.venv`**, builds **`ui/`**, writes **`sic-arena.service`**, and enables **`sic-arena`** (same non-root user when applicable).
 4. If **`../Monyatron`** exists (with **`requirements-web.txt`** and **`web/backend/app.py`**), creates **`Monyatron/.venv`**, writes **`monyatron.service`** (Flask + Ollama station desk on **`MONYATRON_PORT`**, default **5050**), and enables **`monyatron`**.
 5. If **`../jonotron`** exists, runs **`scripts/install.sh`**, sets **`JONOTRON_PORT`** in **`.env`** (default **8011**, distinct from Splippers Archive on **8000**), runs **`scripts/install-service.sh`**, and enables **`jonotron`** (upstream **`jonotron.service`** template).
-6. Runs **`deploy/portal/install-portal.sh`** for nginx on port **80** unless **`SKIP_PORTAL=1`**.
+6. If **`../Deanotron`** exists, runs **`deploy/install-deanotron.sh`** (Node ≥ 20.19, **`npm ci`**, **`deanotron-web`** on **`DEANOTRON_PORT`**, default **8791**).
+7. Runs **`deploy/portal/install-portal.sh`** for nginx on port **80** unless **`SKIP_PORTAL=1`**.
 
 Prerequisites: **`python3`**, **`python3-venv`**, **`npm`** (Node.js), and **`nginx`** if you want the portal step (otherwise install nginx later and run `deploy/portal/install-portal.sh` yourself).
 
@@ -58,14 +59,14 @@ Useful options:
 | **`REBUILD_UI=1`** | Force `npm install && npm run build` for both UIs |
 | **`SKIP_PORTAL=1`** | Skip nginx portal install |
 | **`RUN_USER=name`** | User for Splippers + SIC venvs and UI builds (default: invoking user behind `sudo`) |
-| **`SPLIPPERS_PORT`**, **`MASSDEB8_PORT`**, **`MONYATRON_PORT`**, **`JONOTRON_PORT`** | Listener ports (defaults **8000**, **8787**, **5050**, **8011**); use **`sudo -E`** so variables survive `sudo` |
+| **`SPLIPPERS_PORT`**, **`MASSDEB8_PORT`**, **`MONYATRON_PORT`**, **`JONOTRON_PORT`**, **`DEANOTRON_PORT`** | Listener ports (defaults **8000**, **8787**, **5050**, **8011**, **8791**); use **`sudo -E`** so variables survive `sudo` |
 
 ## Unified Splippers portal (port 80)
 
-**`http://<host>/` and `http://<host>:80/`** serve the NerveCentre **`index.html`** (unified landing page). **Brickwise**, **Monyatron**, **Jonotron**, **Archive**, and **SIC** use the paths and redirects/proxies in `deploy/portal/install-portal.sh`. Proxied apps use the **`/brickwise/`**, **`/monyatron/`**, **`/jonotron/`** URL prefixes on port **80**.
+**`http://<host>/` and `http://<host>:80/`** serve the NerveCentre **`index.html`** (unified landing page). **Brickwise**, **Monyatron**, and **Jonotron** are reverse-proxied under **`/brickwise/`**, **`/monyatron/`**, **`/jonotron/`**. **Archive**, **SIC**, and **Deanotron** use **HTTP redirects** to their listener ports (Expo web for Deanotron defaults to **8791** — see `Deanotron/deploy/`).
 
 1. Install nginx (`sudo apt install nginx` on Debian/Ubuntu).
-2. Ensure Splippers backends are running where you intend (Brickwise on Gluster nodes, Archive/SIC, Monyatron, Jonotron as you deploy them).
+2. Ensure Splippers backends are running where you intend (Brickwise on Gluster nodes, Archive/SIC, Monyatron, Jonotron, Deanotron as you deploy them).
 3. From this repo:
 
    ```bash
@@ -106,6 +107,12 @@ sudo JONOTRON_BACKENDS="10.0.0.1:8011 10.0.0.2:8011" \
 ```
 
 If **`JONOTRON_BACKENDS`** is unset, nginx proxies **`/jonotron/`** to **`127.0.0.1:$JONOTRON_PORT`** (default **`JONOTRON_PORT=8011`** so Splippers Archive can keep **8000** on the same host).
+
+### Deanotron (Expo web — redirect)
+
+The portal links **`/deanotron/`** → **`302`** → **`http://$host:$DEANOTRON_PORT/`** (default **`8791`**, matching `Deanotron/deploy/install-deanotron.sh`). Expo’s dev server expects root URLs; path-prefix reverse proxy is not used here.
+
+Pin another host if needed: **`DEANOTRON_REDIRECT_HOST`**.
 
 ### Redirects for Archive / SIC on a specific node
 

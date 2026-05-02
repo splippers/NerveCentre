@@ -2,7 +2,7 @@
 # Install the Splippers unified web portal from NerveCentre (nginx, port 80).
 # Host-agnostic: Brickwise can load-balance across multiple backends (e.g. Eddie + Marvin).
 #
-# Brickwise / Archive / SIC / Monyatron / Jonotron defaults: 8756 / 8000 / 8787 / 5050 / 8011.
+# Brickwise / Archive / SIC / Monyatron / Jonotron / Deanotron: 8756 / 8000 / 8787 / 5050 / 8011 / 8791.
 #
 # Usage (from repo checkout):
 #   sudo ./deploy/portal/install-portal.sh
@@ -18,6 +18,8 @@
 #
 # Jonotron (FastAPI harness — default backend 8011 so Splippers Archive can keep 8000):
 #   sudo JONOTRON_BACKENDS="10.0.0.1:8011 10.0.0.2:8011" ./deploy/portal/install-portal.sh
+#
+# Deanotron (Expo web — HTTP redirect to dedicated port; same pattern as Archive/SIC)
 
 set -euo pipefail
 
@@ -36,6 +38,7 @@ MONYATRON_LB_METHOD="${MONYATRON_LB_METHOD:-least_conn}"
 JONOTRON_PORT="${JONOTRON_PORT:-8011}"
 JONOTRON_BACKENDS="${JONOTRON_BACKENDS:-}"
 JONOTRON_LB_METHOD="${JONOTRON_LB_METHOD:-least_conn}"
+DEANOTRON_PORT="${DEANOTRON_PORT:-8791}"
 WWW="${WWW:-/var/www/splippers-portal}"
 SITE_NAME="${SITE_NAME:-splippers-portal}"
 
@@ -155,8 +158,17 @@ sic_redirect_stmt() {
   fi
 }
 
+deanotron_redirect_stmt() {
+  if [[ -n "${DEANOTRON_REDIRECT_HOST:-}" ]]; then
+    echo "return 302 http://${DEANOTRON_REDIRECT_HOST}:${DEANOTRON_PORT}/;"
+  else
+    echo "return 302 http://\$host:${DEANOTRON_PORT}/;"
+  fi
+}
+
 ARCH_LINE="$(archive_redirect_stmt)"
 SIC_LINE="$(sic_redirect_stmt)"
+DEAN_LINE="$(deanotron_redirect_stmt)"
 
 mkdir -p "$WWW"
 
@@ -251,6 +263,14 @@ server {
         ${SIC_LINE}
     }
 
+    # Deanotron (Expo web) — absolute asset paths; redirect to dedicated port (see Deanotron deploy/).
+    location = /deanotron {
+        ${DEAN_LINE}
+    }
+    location /deanotron/ {
+        ${DEAN_LINE}
+    }
+
     # Everything else under this host:80 — serve static files; / → index.html (NerveCentre UI)
     location / {
         try_files \$uri \$uri/ /index.html;
@@ -293,4 +313,5 @@ if [[ -z "${JONOTRON_BACKENDS// }" ]]; then
 else
   echo "  Jonotron upstream (load-balanced): ${JONOTRON_BACKENDS}"
 fi
+echo "  Deanotron redirect: ${DEANOTRON_REDIRECT_HOST:-\$host}:${DEANOTRON_PORT} (Expo web)"
 echo "Open http://$(hostname -I 2>/dev/null | awk '{print $1}')/ or your load-balanced VIP."

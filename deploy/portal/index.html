@@ -19,6 +19,7 @@
       --sic: #c084fc;
       --monyatron: #2dd4bf;
       --jonotron: #fb923c;
+      --deanotron: #f472b6;
       --card-radius: 18px;
     }
     * { box-sizing: border-box; }
@@ -34,7 +35,7 @@
       line-height: 1.45;
     }
     .wrap {
-      max-width: 1200px;
+      max-width: 1280px;
       margin: 0 auto;
       padding: 2.25rem 1.35rem 3rem;
     }
@@ -120,6 +121,11 @@
       background: rgba(251, 146, 60, 0.1);
       border: 1px solid rgba(251, 146, 60, 0.28);
     }
+    .card--deanotron .badge {
+      color: var(--deanotron);
+      background: rgba(244, 114, 182, 0.1);
+      border: 1px solid rgba(244, 114, 182, 0.28);
+    }
     a.card h2 {
       margin: 0 0 0.45rem;
       font-size: 1.35rem;
@@ -143,6 +149,7 @@
     a.card--sic .cta { color: var(--sic); }
     a.card--monyatron .cta { color: var(--monyatron); }
     a.card--jonotron .cta { color: var(--jonotron); }
+    a.card--deanotron .cta { color: var(--deanotron); }
     footer {
       margin-top: 2.75rem;
       text-align: center;
@@ -187,6 +194,12 @@
         <h2>Jonotron</h2>
         <p class="blurb">AR game design twin — Ollama agent with workspace tools over HTTP.</p>
         <span class="cta">Open Jonotron →</span>
+      </a>
+      <a class="card card--deanotron" href="/deanotron/">
+        <span class="badge">Expo</span>
+        <h2>Deanotron</h2>
+        <p class="blurb">React Native / Expo web app — opens the LAN dev server (redirect to port 8791).</p>
+        <span class="cta">Open Deanotron →</span>
       </a>
     </nav>
     <footer>Port 80 · NerveCentre · Splippers backends must be reachable from nginx (local or upstream).</footer>
