@@ -257,7 +257,7 @@ DEANOTRON_ENABLED=0
 echo "==> [6/8] Deanotron — deploy/install-deanotron.sh (optional)"
 if [[ -d "${DEANOTRON}" ]] && [[ -f "${DEANOTRON}/deploy/install-deanotron.sh" ]]; then
   DEANOTRON_ENABLED=1
-  DEANOTRON_SRC="${DEANOTRON}" DEANOTRON_USER="${RUN_USER}" DEANOTRON_PORT="${DEANOTRON_PORT}" bash "${DEANOTRON}/deploy/install-deanotron.sh"
+  DEANOTRON_SRC="${DEANOTRON}" DEANOTRON_USER="${RUN_USER}" DEANOTRON_PORT="${DEANOTRON_PORT}" bash "${NERVECENTRE}/deploy/deanotron/enroll.sh"
 else
   echo "    skip — no Deanotron clone at ${DEANOTRON}"
 fi

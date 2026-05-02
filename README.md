@@ -46,7 +46,7 @@ This script:
 3. Creates **`massdeb8/.venv`**, builds **`ui/`**, writes **`sic-arena.service`**, and enables **`sic-arena`** (same non-root user when applicable).
 4. If **`../Monyatron`** exists (with **`requirements-web.txt`** and **`web/backend/app.py`**), creates **`Monyatron/.venv`**, writes **`monyatron.service`** (Flask + Ollama station desk on **`MONYATRON_PORT`**, default **5050**), and enables **`monyatron`**.
 5. If **`../jonotron`** exists, runs **`scripts/install.sh`**, sets **`JONOTRON_PORT`** in **`.env`** (default **8011**, distinct from Splippers Archive on **8000**), runs **`scripts/install-service.sh`**, and enables **`jonotron`** (upstream **`jonotron.service`** template).
-6. If **`../Deanotron`** exists, runs **`deploy/install-deanotron.sh`** (Node ≥ 20.19, **`npm ci`**, **`deanotron-web`** on **`DEANOTRON_PORT`**, default **8791**).
+6. If **`../Deanotron`** exists, runs **`deploy/deanotron/enroll.sh`** (wraps Deanotron’s **`deploy/install-deanotron.sh`**: Node ≥ 20.19, **`npm ci`**, **`deanotron-web`** on **`DEANOTRON_PORT`**, default **8791**).
 7. Runs **`deploy/portal/install-portal.sh`** for nginx on port **80** unless **`SKIP_PORTAL=1`**.
 
 Prerequisites: **`python3`**, **`python3-venv`**, **`npm`** (Node.js), and **`nginx`** if you want the portal step (otherwise install nginx later and run `deploy/portal/install-portal.sh` yourself).
@@ -127,6 +127,17 @@ Override ports with **`ARCHIVE_PORT`** (default **8000**) and **`SIC_PORT`** (de
 
 Static assets install under **`/var/www/splippers-portal/`**; the nginx site defaults to **`splippers-portal`**.
 
+## Enrolling Deanotron
+
+With a **Deanotron** clone beside this repo (e.g. **`Projects/Deanotron`** next to **`Projects/NerveCentre`**):
+
+```bash
+cd Projects/NerveCentre
+sudo ./deploy/deanotron/enroll.sh
+```
+
+This installs **`/etc/default/deanotron`**, **`deanotron-web.service`**, and starts **Expo web** on **`DEANOTRON_PORT`** (default **8791**). Override **`DEANOTRON_SRC`** if the repo lives elsewhere. Then run **`deploy/portal/install-portal.sh`** (or the full **`install-all-splippers.sh`**) so nginx redirects **`/deanotron/`** to that port.
+
 ## Layout
 
 | Path | Role |
@@ -135,5 +146,6 @@ Static assets install under **`/var/www/splippers-portal/`**; the nginx site def
 | `deploy/portal/install-portal.sh` | Writes nginx site (upstream + server block) and reloads nginx |
 | `deploy/install-repo.sh` | Clone / pull this repository |
 | `deploy/install-all-splippers.sh` | Brickwise + Splippers Archive + SIC venvs, UI builds, systemd, optional nginx portal |
+| `deploy/deanotron/enroll.sh` | Enroll Deanotron (delegates to Deanotron `deploy/install-deanotron.sh`) |
 
 The former **`deploy/marvin-portal/`** path is retired; use **`deploy/portal/`** only.
