@@ -41,8 +41,11 @@ Then visit `http://localhost:5000` in your browser.
 ## Integration with NerveCentre
 - Listed as a service in the all-in-one installer (`../jonotron`)
 - Configured for load balancing with `JONOTRON_BACKENDS`
-- Default port: `8011` (distinct from Splippers Archive on `8000`)
-- Service file: `jonotron.service` (installed via `scripts/install-service.sh`)
+- Default port: `8012` (distinct from Splippers Archive on `8000`)
+- Service file: `jonotron-web.service` (systemd, runs as `jonotron` user)
+- Service name changed from `jonotron.service` to `jonotron-web.service` (2026-05-06)
+- Sandboxed: ReadWritePaths limited to `/home/jonotron` and `/mnt`
+- User `jonotron` has read/write access to `/mnt` via `sandiego` group
 
 ## Linked Repos
 - [BoreDoom](https://github.com/splippers/BoreDoom)
