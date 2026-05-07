@@ -20,6 +20,8 @@
       --monyatron: #2dd4bf;
       --jonotron: #fb923c;
       --deanotron: #f472b6;
+      --projects: #4ade80;
+      --workadventure: #a78bfa;
       --card-radius: 18px;
     }
     * { box-sizing: border-box; }
@@ -126,6 +128,16 @@
       background: rgba(244, 114, 182, 0.1);
       border: 1px solid rgba(244, 114, 182, 0.28);
     }
+    .card--projects .badge {
+      color: var(--projects);
+      background: rgba(74, 222, 128, 0.1);
+      border: 1px solid rgba(74, 222, 128, 0.28);
+    }
+    .card--workadventure .badge {
+      color: var(--workadventure);
+      background: rgba(167, 139, 250, 0.11);
+      border: 1px solid rgba(167, 139, 250, 0.28);
+    }
     a.card h2 {
       margin: 0 0 0.45rem;
       font-size: 1.35rem;
@@ -150,6 +162,52 @@
     a.card--monyatron .cta { color: var(--monyatron); }
     a.card--jonotron .cta { color: var(--jonotron); }
     a.card--deanotron .cta { color: var(--deanotron); }
+    a.card--projects .cta { color: var(--projects); }
+    a.card--workadventure .cta { color: var(--workadventure); }
+    /* Project prioritiser: dashboard + standalone Drive guide link */
+    .card-split {
+      border-radius: var(--card-radius);
+      border: 1px solid var(--edge);
+      background: rgba(14, 18, 26, 0.72);
+      backdrop-filter: blur(12px);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.04) inset,
+        0 18px 44px rgba(0, 0, 0, 0.35);
+      transition: transform 0.18s ease, border-color 0.18s ease;
+      overflow: hidden;
+    }
+    .card-split:hover {
+      transform: translateY(-3px);
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+    .card-split-inner {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    a.card-split-primary {
+      text-decoration: none;
+      color: inherit;
+      padding: 1.45rem 1.35rem 0.95rem;
+    }
+    .card-split-primary:focus-visible {
+      outline: none;
+      box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35);
+    }
+    a.card-split-guide {
+      display: block;
+      padding: 0.75rem 1.35rem 1.2rem;
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: rgba(174, 250, 198, 0.95);
+      text-decoration: none;
+      border-top: 1px solid var(--edge);
+      background: rgba(74, 222, 128, 0.05);
+      transition: background 0.15s ease;
+    }
+    a.card-split-guide:hover {
+      background: rgba(74, 222, 128, 0.1);
+    }
     footer {
       margin-top: 2.75rem;
       text-align: center;
@@ -162,9 +220,9 @@
   <div class="wrap">
     <header>
       <h1>NerveCentre</h1>
-      <p>Unified Splippers entry — use this portal from your VIP or any load-balanced node (e.g. Eddie, Marvin).</p>
+      <p>Unified Splippers entry — Brickwise, Splippers Archive, SIC, Monyatron, Deanotron, Jonotron, WorkAdventure, plus local project prioritisation. Use from your VIP or any load-balanced node (e.g. Eddie, Marvin).</p>
     </header>
-    <nav class="grid" aria-label="Splippers apps">
+    <nav class="grid" aria-label="Splippers apps and workspace tools">
       <a class="card card--brickwise" href="/brickwise/">
         <span class="badge">Storage</span>
         <h2>Brickwise</h2>
@@ -189,20 +247,37 @@
         <p class="blurb">Splippers station desk — Monya manuscript tooling and Ollama-backed chat.</p>
         <span class="cta">Open Monyatron →</span>
       </a>
+      <a class="card card--deanotron" href="/deanotron/">
+        <span class="badge">Expo</span>
+        <h2>Deanotron</h2>
+        <p class="blurb">React Native / Expo web — portal redirects here to <code>:8791</code> on the <strong>same host</strong> (deploy <code>deanotron-web</code> on every node behind your VIP).</p>
+        <span class="cta">Open Deanotron →</span>
+      </a>
       <a class="card card--jonotron" href="/jonotron/">
         <span class="badge">Agent</span>
         <h2>Jonotron</h2>
         <p class="blurb">AR game design twin — Ollama agent with workspace tools over HTTP.</p>
         <span class="cta">Open Jonotron →</span>
       </a>
-      <a class="card card--deanotron" href="/deanotron/">
-        <span class="badge">Expo</span>
-        <h2>Deanotron</h2>
-        <p class="blurb">React Native / Expo web app — opens the LAN dev server (redirect to port 8791).</p>
-        <span class="cta">Open Deanotron →</span>
+      <a class="card card--workadventure" href="/workadventure/">
+        <span class="badge">Worlds</span>
+        <h2>WorkAdventure</h2>
+        <p class="blurb">Collaborative virtual office — video chat, maps, and avatars. Opens Traefik on this host (port <strong>9080</strong> by default). Browsers still need <code>*.workadventure.localhost</code> to resolve: use <a href="/workadventure-hosts.txt">hosts-file snippet</a> (installed when the portal is deployed with <code>NERVECENTRE_LAN_IP</code>).</p>
+        <span class="cta">Open WorkAdventure →</span>
       </a>
+      <div class="card-split">
+        <div class="card-split-inner">
+          <a class="card-split-primary card--projects" href="/projects/">
+            <span class="badge">Workspace</span>
+            <h2>Project prioritiser</h2>
+            <p class="blurb">Scan sibling git repos under <code>Projects/</code>, score and rank them, add notes — <code>systemd projectscan-dashboard</code> on <strong><code>/projects/</code></strong> (<code>moneymakers/projectscan.py</code>).</p>
+            <span class="cta">Open project prioritiser →</span>
+          </a>
+          <a class="card-split-guide" href="/moneymakers-drive-guide.html">Google Drive uploads — setup guide →</a>
+        </div>
+      </div>
     </nav>
-    <footer>Port 80 · NerveCentre · Splippers backends must be reachable from nginx (local or upstream).</footer>
+    <footer>Port 80 · NerveCentre · <code>/projects/</code> → systemd <code>projectscan-dashboard.service</code> (default <code>:8765</code>) · <code>/deanotron/</code> → <code>:8791</code> · <code>/workadventure/</code> → WorkAdventure play URL · load-balanced VIPs need backends on each node.</footer>
   </div>
 </body>
 </html>

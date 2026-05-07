@@ -9,6 +9,7 @@
 #   Projects/massdeb8/
 #   Projects/Monyatron/              (optional — Flask + Ollama station desk)
 #   Projects/jonotron/               (optional — FastAPI harness + static UI)
+#   Projects/moneymakers/            (optional — project prioritiser; systemd projectscan-dashboard)
 #   Projects/Deanotron/               (optional — Expo web via systemd deanotron-web)
 #
 # Requires: sudo root, python3, python3-venv, pip; Node.js + npm for UI builds; nginx for the portal step.
@@ -19,6 +20,7 @@
 #   sudo ./deploy/install-all-splippers.sh --dry-run
 #
 # Environment (optional):
+#   NERVECENTRE_INSTALL_VERSION=id  Overrides deploy/install-version for echoed / published bundle id
 #   INSTALL_ALL_SPLIPPERS_DRY_RUN=1   Same as --dry-run
 #   RUN_USER              User for Splippers + SIC venvs and UI builds (default: SUDO_USER or root)
 #   REBUILD_UI=1          Force npm install && npm run build even if dist/ exists
@@ -28,6 +30,7 @@
 #   MONYATRON_PORT=5050   Port for monyatron.service (when ../Monyatron exists)
 #   JONOTRON_PORT=8011    Port for jonotron.service (.env + nginx; avoids Splippers Archive on 8000)
 #   DEANOTRON_PORT=8791   Port for deanotron-web (install-deanotron.sh default; nginx redirect)
+#   PROJECTSCAN_PORT=8765 projectscan systemd + nginx /projects/ (when ../moneymakers/projectscan.py exists)
 
 set -euo pipefail
 
@@ -54,12 +57,19 @@ need_root() {
 NERVECENTRE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PROJECTS="$(cd "${NERVECENTRE}/.." && pwd)"
 
+INSTALL_BUNDLE="${NERVECENTRE_INSTALL_VERSION:-}"
+if [[ -z "${INSTALL_BUNDLE}" && -f "${NERVECENTRE}/deploy/install-version" ]]; then
+  INSTALL_BUNDLE="$(tr -d '\r\n' < "${NERVECENTRE}/deploy/install-version")"
+fi
+
 BRICKWISE="${PROJECTS}/Brickwise"
 SPLIPPERS="${PROJECTS}/Splippers-Archive"
 MASSDEB8="${PROJECTS}/massdeb8"
 MONYATRON="${PROJECTS}/Monyatron"
 JONOTRON="${PROJECTS}/jonotron"
 DEANOTRON="${PROJECTS}/Deanotron"
+MONEYMAKERS="${PROJECTS}/moneymakers"
+PROJECTSCAN_PORT="${PROJECTSCAN_PORT:-8765}"
 
 RUN_USER="${RUN_USER:-${SUDO_USER:-}}"
 if [[ -z "${RUN_USER}" ]] || [[ "${RUN_USER}" == root ]]; then
@@ -76,6 +86,9 @@ export JONOTRON_PORT="${JONOTRON_PORT:-8011}"
 export DEANOTRON_PORT="${DEANOTRON_PORT:-8791}"
 
 echo "==> NerveCentre all-in-one Splippers installer"
+if [[ -n "${INSTALL_BUNDLE}" ]]; then
+  echo "    Install bundle: ${INSTALL_BUNDLE}"
+fi
 echo "    NerveCentre: ${NERVECENTRE}"
 echo "    Projects:    ${PROJECTS}"
 echo "    Brickwise:   ${BRICKWISE}"
@@ -84,6 +97,7 @@ echo "    SIC/massdeb8:${MASSDEB8}"
 echo "    Monyatron:   ${MONYATRON} (optional)"
 echo "    Jonotron:    ${JONOTRON} (optional)"
 echo "    Deanotron:   ${DEANOTRON} (optional)"
+echo "    Moneymakers: ${MONEYMAKERS} (optional — project prioritiser)"
 echo "    RUN_USER (venv/UI): ${RUN_USER}"
 echo
 
@@ -262,6 +276,18 @@ else
   echo "    skip — no Deanotron clone at ${DEANOTRON}"
 fi
 
+# --- Project prioritiser (optional): systemd ---------------------------------------
+PROJECTSCAN_ENABLED=0
+echo "==> [6b/8] Project prioritiser — projectscan-dashboard.service (optional)"
+if [[ -f "${MONEYMAKERS}/projectscan.py" ]]; then
+  PROJECTSCAN_ENABLED=1
+  RUN_USER="${RUN_USER}" PROJECTSCAN_PORT="${PROJECTSCAN_PORT}" MONEYMAKERS="${MONEYMAKERS}" \
+    PROJECTSCAN_ROOT="${PROJECTSCAN_ROOT:-}" PROJECTSCAN_INDEX_DIR="${PROJECTSCAN_INDEX_DIR:-}" \
+    bash "${NERVECENTRE}/deploy/projectscan/install-service.sh"
+else
+  echo "    skip — no moneymakers/projectscan.py at ${MONEYMAKERS}"
+fi
+
 # --- Enable services ---------------------------------------------------------------
 echo "==> [7/8] systemd daemon-reload + enable --now"
 systemctl daemon-reload
@@ -300,4 +326,9 @@ if [[ "${DEANOTRON_ENABLED}" == "1" ]]; then
 fi
 if [[ "${SKIP_PORTAL}" != "1" ]] && command -v nginx >/dev/null 2>&1; then
   echo "  NerveCentre portal  http://127.0.0.1/"
+fi
+if [[ "${PROJECTSCAN_ENABLED}" == "1" ]]; then
+  echo "  Project prioritiser  http://127.0.0.1:${PROJECTSCAN_PORT}/  (systemd projectscan-dashboard; nginx /projects/)"
+elif [[ -d "${MONEYMAKERS}" ]] && [[ -f "${MONEYMAKERS}/projectscan.py" ]]; then
+  echo "  Project prioritiser  moneymakers at ${MONEYMAKERS} — sudo bash ${NERVECENTRE}/deploy/projectscan/install-service.sh"
 fi

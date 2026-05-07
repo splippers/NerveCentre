@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Moneymakers — Google Drive uploads setup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg0: #06080c;
+      --bg1: #0d1118;
+      --edge: rgba(255, 255, 255, 0.08);
+      --text: #e9eef5;
+      --muted: #94a3b8;
+      --accent: #4ade80;
+      --code: #22d3ee;
+      --warn: #fbbf24;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "DM Sans", system-ui, sans-serif;
+      color: var(--text);
+      background: radial-gradient(1000px 500px at 10% -8%, rgba(74, 222, 128, 0.1), transparent 50%),
+        linear-gradient(165deg, var(--bg0), var(--bg1));
+      line-height: 1.55;
+      min-height: 100vh;
+    }
+    .wrap { max-width: 720px; margin: 0 auto; padding: 2rem 1.25rem 3rem; }
+    .nav-back {
+      font-size: 0.92rem;
+      margin-bottom: 1.35rem;
+    }
+    .nav-back a {
+      color: var(--accent);
+      text-decoration: none;
+      margin-right: 1rem;
+    }
+    .nav-back a:hover { text-decoration: underline; }
+    .your-host {
+      margin: 0 0 1.25rem;
+      padding: 1rem 1.1rem;
+      border-radius: var(--radius);
+      border: 1px solid rgba(74, 222, 128, 0.35);
+      background: rgba(74, 222, 128, 0.06);
+      font-size: 0.9rem;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+    .your-host strong { color: var(--accent); }
+    h1 {
+      font-size: clamp(1.55rem, 4vw, 1.95rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin: 0 0 0.65rem;
+    }
+    .lede {
+      color: var(--muted);
+      font-size: 1.03rem;
+      margin: 0 0 1.75rem;
+    }
+    h2 {
+      font-size: 1.08rem;
+      font-weight: 700;
+      margin: 2rem 0 0.65rem;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+    }
+    p, li { color: var(--muted); margin: 0 0 0.75rem; font-size: 0.965rem; }
+    strong { color: var(--text); font-weight: 600; }
+    .toc {
+      background: rgba(14, 18, 26, 0.85);
+      border: 1px solid var(--edge);
+      border-radius: var(--radius);
+      padding: 1rem 1.1rem;
+      margin: 1.25rem 0 2rem;
+    }
+    .toc h2 { margin: 0 0 0.5rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    .toc ol { margin: 0; padding-left: 1.2rem; }
+    .toc a { color: var(--accent); text-decoration: none; }
+    .toc a:hover { text-decoration: underline; }
+    pre, .cmd {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--edge);
+      border-radius: var(--radius);
+      padding: 0.75rem 0.95rem;
+      font-size: 0.825rem;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin: 0.6rem 0 1rem;
+      color: #cbd5e1;
+      font-family: ui-monospace, "Cascadia Code", monospace;
+    }
+    code { font-family: ui-monospace, monospace; font-size: 0.84em; color: var(--code); }
+    .note {
+      border-left: 3px solid var(--warn);
+      padding: 0.45rem 0 0.45rem 0.85rem;
+      margin: 1rem 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    ul { padding-left: 1.2rem; }
+    footer {
+      margin-top: 2.5rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--edge);
+      font-size: 0.85rem;
+      color: rgba(148, 163, 184, 0.7);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <aside class="your-host" aria-label="Your LAN URLs">
+      <strong>Splippers portal on your network</strong><br />
+      NerveCentre landing: <code>http://192.168.1.2/</code><br />
+      Project prioritiser (moneymakers): <code>http://192.168.1.2/projects/</code><br />
+      This guide: <code>http://192.168.1.2/moneymakers-drive-guide.html</code>
+    </aside>
+
+    <nav class="nav-back" aria-label="Back links">
+      <a href="http://192.168.1.2/">← NerveCentre</a>
+      <a href="http://192.168.1.2/projects/">← Project prioritiser</a>
+    </nav>
+
+    <h1>Google Drive uploads (projectscan)</h1>
+    <p class="lede">
+      Upload portfolio reports from the <strong>moneymakers</strong> dashboard at <code>http://192.168.1.2/projects/</code> or from the CLI.
+      This guide covers Google Workspace, OAuth, systemd, SSH, and optional email lockdown.
+    </p>
+
+    <section class="toc" aria-labelledby="toc-h">
+      <h2 id="toc-h">On this page</h2>
+      <ol>
+        <li><a href="#one-liner">What you install</a></li>
+        <li><a href="#gcp">Google Cloud (Workspace internal app)</a></li>
+        <li><a href="#files-env">Secrets, token paths, environment</a></li>
+        <li><a href="#manual-download">Download-only (manual Drive upload)</a></li>
+        <li><a href="#oauth-first">First sign-in: <code>drive-auth</code></a></li>
+        <li><a href="#ssh">Doing OAuth over SSH (port forward)</a></li>
+        <li><a href="#allowlist">Lock uploads to specific emails</a></li>
+        <li><a href="#systemd">Production (systemd + nginx)</a></li>
+        <li><a href="#wizard">Interactive wizard script</a></li>
+      </ol>
+    </section>
+
+    <h2 id="one-liner">1. What you install</h2>
+    <p>On the host that runs <code>moneymakers/projectscan.py</code>:</p>
+    <div class="cmd">python3 -m venv .venv<br />
+.venv/bin/pip install -r requirements-google.txt</div>
+    <p>Depends are listed in <code>moneymakers/requirements-google.txt</code>.</p>
+
+    <h2 id="gcp">2. Google Cloud (Workspace internal app)</h2>
+    <p>Open the <strong>same Google Cloud project</strong> everywhere (Console works in a desktop or mobile browser).</p>
+    <ol>
+      <li><strong>Create / pick a GCP project.</strong></li>
+      <li><strong>Enable APIs &amp; Services → Library → enable “Google Drive API”.</strong></li>
+      <li><strong>OAuth consent screen:</strong> user type <strong>Internal</strong> (Workspace — only organisational accounts).</li>
+      <li><strong>Add scopes</strong> (manually if the UI asks):
+        <div class="cmd">https://www.googleapis.com/auth/drive.file<br />
+https://www.googleapis.com/auth/userinfo.email</div>
+      </li>
+      <li><strong>Credentials → Create → OAuth client ID → Desktop app.</strong> Download the JSON.</li>
+    </ol>
+    <p>Save it as <code>moneymakers/project_index/client_secrets.json</code> (parent dir is fine; it is created when you run a scan).</p>
+    <p class="note">If users cannot consent, Workspace admin API controls might block Drive: <strong>Google Admin Console → Security → Access and data control → API controls</strong>.</p>
+
+    <h2 id="files-env">3. Secrets, token paths, environment</h2>
+    <table style="width:100%; border-collapse: collapse; font-size: 0.9rem;">
+      <thead>
+        <tr style="border-bottom:1px solid var(--edge);">
+          <th style="text-align:left; padding:0.35rem 0;">Variable</th>
+          <th style="text-align:left; padding:0.35rem 0;">Role</th>
+        </tr>
+      </thead>
+      <tbody style="color:var(--muted);">
+        <tr><td style="padding:0.35rem 0; vertical-align:top;"><code>PROJECTSCAN_PUBLIC_ORIGIN</code></td><td>LAN portal base for dashboard links — set to <code>http://192.168.1.2</code>.</td></tr>
+        <tr><td style="padding:0.35rem 0; vertical-align:top;"><code>PROJECTSCAN_DRIVE_CLIENT_SECRETS</code></td><td>Path to Desktop OAuth JSON (defaults to project index).</td></tr>
+        <tr><td style="padding:0.35rem 0; vertical-align:top;"><code>PROJECTSCAN_DRIVE_TOKEN_PATH</code></td><td>Where OAuth refresh token lives (defaults next to index).</td></tr>
+        <tr><td style="padding:0.35rem 0; vertical-align:top;"><code>PROJECTSCAN_DRIVE_FOLDER_ID</code></td><td>Optional Drive folder ID for uploads.</td></tr>
+        <tr><td style="padding:0.35rem 0; vertical-align:top;"><code>PROJECTSCAN_DRIVE_ALLOWED_EMAILS</code></td><td>Comma-separated lowercased logins allowed to upload (optional).</td></tr>
+        <tr><td style="padding:0.35rem 0; vertical-align:top;"><code>PROJECTSCAN_DRIVE_OAUTH_PORT</code></td><td>Fixed loopback port for OAuth when using SSH (see below).</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="manual-download">4. Download-only (upload to Drive in the browser)</h2>
+    <p>No OAuth required: on the prioritiser toolbar choose <strong>Report format</strong> and <strong>Report subset</strong>, then <strong>Download report</strong>.</p>
+    <p>Direct GET (bookmark or script):</p>
+    <div class="cmd">http://192.168.1.2/projects/api/report/download?format=txt&amp;subset=all</div>
+    <p>Replace <code>format</code> with <code>md</code>, <code>csv</code>, or <code>json</code>; <code>subset</code> with <code>past_metaai</code> if needed.</p>
+
+    <h2 id="oauth-first">5. First sign-in: <code>drive-auth</code></h2>
+    <p>From <code>moneymakers/</code> (venv Python preferred):</p>
+    <div class="cmd">export PROJECTSCAN_DRIVE_ALLOWED_EMAILS="you@yourdomain.com"   # optional<br />
+.venv/bin/python projectscan.py drive-auth</div>
+    <p>A browser opens; sign in with the Workspace account. The token file is written (default near <code>project_index/</code>).</p>
+
+    <h2 id="ssh">6. OAuth over SSH</h2>
+    <p>Desktop OAuth redirects to <code>http://127.0.0.1:&lt;port&gt;/...</code>. If <code>projectscan.py drive-auth</code> runs <strong>on a remote server</strong>, forward that loopback port from your laptop <strong>before</strong> you start auth:</p>
+    <div class="cmd"># On your laptop (second terminal — leave running):<br />
+ssh -L 9876:127.0.0.1:9876 -N YOUR_USER@REMOTE_HOST</div>
+    <p>Then on <code>REMOTE_HOST</code>:</p>
+    <div class="cmd">export PROJECTSCAN_DRIVE_OAUTH_PORT=9876<br />
+python3 projectscan.py drive-auth --oauth-port 9876</div>
+    <p>Open the authorisation URL in a browser <strong>on the laptop</strong>; the redirect goes to local <code>:9876</code>, tunnels to the server, and completes OAuth.</p>
+    <p class="note">Multi-hop SSH: attach <code>-L</code> to the hop that terminates on the machine running Python.</p>
+
+    <h2 id="allowlist">7. Lock uploads to specific emails</h2>
+    <div class="cmd">export PROJECTSCAN_DRIVE_ALLOWED_EMAILS="jon@splippers.com,colleague@company.com"</div>
+    <p>Combined with an <strong>Internal</strong> OAuth app, Workspace already limits who can consent; this variable is app-side defence on your server.</p>
+
+    <h2 id="systemd">8. Production (systemd + nginx)</h2>
+    <p>You browse the dashboard at <code>http://192.168.1.2/projects/</code> via nginx reverse proxy. Persist Drive-related env here:</p>
+    <div class="cmd">PROJECTSCAN_PUBLIC_ORIGIN=http://192.168.1.2<br />
+PROJECTSCAN_DRIVE_CLIENT_SECRETS=/path/to/client_secrets.json<br />
+PROJECTSCAN_DRIVE_ALLOWED_EMAILS=jon@splippers.com<br />
+# PROJECTSCAN_DRIVE_OAUTH_PORT=9876   # only for SSH OAuth</div>
+    <p>After edits: <code>sudo systemctl restart projectscan-dashboard</code>.</p>
+
+    <h2 id="wizard">9. Interactive wizard (URLs &amp; copy-paste commands)</h2>
+    <p>From the checkout:</p>
+    <div class="cmd">./drive_workspace_setup_wizard.py --project-id YOUR_GCP_PROJECT --allow-email jon@splippers.com</div>
+    <p>Runs through Console links (mobile-friendly), env snippets, and optional <code>drive-auth</code>. Script path: <code>moneymakers/drive_workspace_setup_wizard.py</code>.</p>
+
+    <footer>
+      Splippers portal static page · Companion to <code>moneymakers/projectscan.py</code> · Reinstall nginx portal with <code>NerveCentre/deploy/portal/install-portal.sh</code> to refresh this file on the server under <code>/var/www/splippers-portal/</code>.
+    </footer>
+  </div>
+</body>
+</html>
